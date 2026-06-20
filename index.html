@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Summerfest 2026 — Schedule</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d12;color:#f0f0f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* HEADER */
+header{background:linear-gradient(135deg,#0d0d20 0%,#1a0a2e 100%);padding:18px 28px 14px;border-bottom:3px solid #FFD700;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+header h1{font-size:1.9rem;font-weight:900;letter-spacing:3px;color:#FFD700;text-shadow:0 0 20px rgba(255,215,0,.4)}
+header p{color:#aaa;font-size:.85rem;margin-top:2px}
+
+/* DAY TABS */
+.day-tabs{display:flex;background:#111217;border-bottom:2px solid #222;overflow-x:auto;gap:0}
+.day-tab{padding:11px 22px;cursor:pointer;color:#777;font-weight:700;font-size:.85rem;letter-spacing:.5px;border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.day-tab:hover{color:#FFD700;background:rgba(255,215,0,.06)}
+.day-tab.active{color:#FFD700;border-bottom-color:#FFD700;background:rgba(255,215,0,.08)}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 20px;background:#111217;border-bottom:1px solid #222}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#ccc;cursor:pointer;padding:3px 7px;border-radius:20px;transition:background .15s}
+.legend-item:hover{background:rgba(255,255,255,.08)}
+.legend-item.dimmed{opacity:.35}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* SCHEDULE WRAPPER */
+.schedule-wrap{overflow-x:auto;padding:0}
+.schedule-inner{display:flex;min-width:max-content}
+
+/* TIME AXIS */
+.time-axis{width:52px;flex-shrink:0;padding-top:56px;position:sticky;left:0;background:#0d0d12;z-index:20}
+.time-label{height:var(--hour-h);display:flex;align-items:flex-start;padding-top:2px;padding-right:6px;justify-content:flex-end;color:#555;font-size:11px;font-weight:600;position:relative}
+.time-label::after{content:'';position:absolute;right:0;top:0;width:6px;height:1px;background:#333}
+
+/* STAGES */
+.stages-grid{display:flex;gap:6px;padding:0 12px 24px}
+.stage-col{width:160px;flex-shrink:0;position:relative}
+.stage-header{height:56px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;font-weight:800;color:#FFD700;background:#18181f;border:1px solid #2a2a35;border-radius:8px 8px 0 0;padding:4px 6px;line-height:1.3;letter-spacing:.3px;text-transform:uppercase;position:sticky;top:0;z-index:10}
+.stage-body{position:relative;background:#13131a;border:1px solid #222;border-top:none;border-radius:0 0 8px 8px}
+.hour-row{height:var(--hour-h);border-bottom:1px solid #1d1d28}
+.hour-row:nth-child(even){background:#141420}
+
+/* ARTIST BLOCKS */
+.artist-block{position:absolute;left:4px;right:4px;border-radius:6px;padding:5px 7px;cursor:pointer;text-decoration:none;display:flex;flex-direction:column;overflow:hidden;transition:filter .15s,transform .12s,z-index 0s;border:1px solid rgba(255,255,255,.12);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.artist-block:hover{filter:brightness(1.25);transform:scale(1.03);z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.7)}
+.artist-block.dimmed{opacity:.15;filter:grayscale(1)}
+.ab-name{font-size:11px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:2px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.ab-genre{font-size:9px;font-weight:600;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.5px}
+.ab-listeners{font-size:9px;color:rgba(255,255,255,.7);margin-top:1px}
+.ab-time{font-size:9px;color:rgba(255,255,255,.6);margin-top:1px}
+
+/* TOOLTIP */
+.tooltip{position:fixed;background:#1e1e2e;border:1px solid #333;border-radius:10px;padding:12px 16px;font-size:12px;pointer-events:none;z-index:999;display:none;max-width:220px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.tooltip strong{font-size:14px;display:block;margin-bottom:4px;color:#fff}
+.tooltip .tt-genre{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.tooltip .tt-listeners{color:#aaa;font-size:11px}
+.tooltip .tt-hint{color:#666;font-size:10px;margin-top:6px}
+
+/* SCROLL HINT */
+.scroll-hint{text-align:center;color:#444;font-size:11px;padding:6px 0;letter-spacing:.5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>☀ SUMMERFEST 2026</h1>
+    <p>Milwaukee, WI &nbsp;·&nbsp; June 25–27 &amp; July 2–4</p>
+  </div>
+</header>
+
+<div class="day-tabs" id="dayTabs"></div>
+<div class="legend" id="legend"></div>
+<p class="scroll-hint">← scroll right to see all stages →</p>
+
+<div class="schedule-wrap" id="scheduleWrap">
+  <div class="schedule-inner">
+    <div class="time-axis" id="timeAxis"></div>
+    <div class="stages-grid" id="stagesGrid"></div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const HOUR_H = 88; // px per hour
+const START_H = 12; // noon
+const END_H = 24;   // midnight
+document.documentElement.style.setProperty('--hour-h', HOUR_H + 'px');
+
+const GENRES = {
+  'Pop':         {color:'#D63384'},
+  'Hip-Hop':     {color:'#7C3AED'},
+  'Rock':        {color:'#DC2626'},
+  'Country':     {color:'#D97706'},
+  'Electronic':  {color:'#0891B2'},
+  'Soul':        {color:'#EA580C'},
+  'R&B':         {color:'#BE185D'},
+  'Indie':       {color:'#16A34A'},
+  'Alternative': {color:'#1D4ED8'},
+  'Folk':        {color:'#78716C'},
+  'Blues':       {color:'#1E40AF'},
+  'Reggae':      {color:'#15803D'},
+  'Metal':       {color:'#374151'},
+  'Latin':       {color:'#B45309'},
+  'Jazz':        {color:'#6B21A8'},
+  'New Wave':    {color:'#0F766E'},
+  'Ska':         {color:'#7E22CE'},
+  'Punk':        {color:'#9F1239'},
+  'Other':       {color:'#4B5563'},
+};
+
+const STAGES = [
+  'Amphitheater',
+  'BMO Harris Pavilion',
+  'Briggs & Stratton Stage',
+  'GENERAC Stage',
+  'Miller Lite Stage',
+  'Harley House Stage',
+  'Aurora Health Care',
+  'T-Mobile Stage',
+  'Uline Warehouse',
+  'Johnsonville Stage',
+];
+
+// t0/t1 in "H:MM" or "HH:MM" 24h format
+// l = monthly listeners (0 = school of rock / N/A), null = unknown
+// s = stage index (0-9)
+const DAYS = [
+  {
+    id:'jun25', label:'Thu Jun 25',
+    artists:[
+      // Amphitheater
+      {n:'Robert Randolph & The Family Band', s:0, t0:'16:30', t1:'17:30', g:'Blues',     l:400000},
+      {n:'Big Daddy Kane',                   s:0, t0:'17:30', t1:'18:30', g:'Hip-Hop',   l:350000},
+      {n:'Myles Smith',                      s:0, t0:'18:30', t1:'19:45', g:'Soul',       l:15000000},
+      {n:'Aaron Rowe',                       s:0, t0:'19:45', t1:'20:45', g:'Country',   l:180000},
+      {n:'Ed Sheeran',                       s:0, t0:'20:45', t1:'23:30', g:'Pop',        l:90000000},
+      // BMO Harris
+      {n:'School of Rock',                   s:1, t0:'12:00', t1:'13:30', g:'Rock',       l:0},
+      {n:'Booker T. Jones',                  s:1, t0:'14:15', t1:'15:30', g:'Soul',       l:300000},
+      {n:'The Handcuffs',                    s:1, t0:'16:15', t1:'17:30', g:'Rock',       l:70000},
+      {n:'Gabriel Jacoby',                   s:1, t0:'17:15', t1:'18:30', g:'Folk',       l:50000},
+      {n:'Sincere Engineer',                 s:1, t0:'18:30', t1:'19:45', g:'Indie',      l:300000},
+      {n:'The Roots',                        s:1, t0:'19:45', t1:'21:15', g:'Hip-Hop',   l:4000000},
+      {n:'Kim Gordon',                       s:1, t0:'21:30', t1:'23:00', g:'Alternative',l:900000},
+      // GENERAC Stage
+      {n:'OUTDrejas',                        s:3, t0:'13:15', t1:'14:15', g:'Rock',       l:30000},
+      {n:'Crystal Gayle',                    s:3, t0:'14:45', t1:'15:45', g:'Country',   l:700000},
+      {n:'Vertical Horizon',                 s:3, t0:'16:30', t1:'17:30', g:'Rock',       l:2000000},
+      {n:'Pat McCurdy',                      s:3, t0:'17:45', t1:'18:45', g:'Folk',       l:40000},
+      {n:'Porch Light',                      s:3, t0:'18:45', t1:'19:45', g:'Country',   l:40000},
+      {n:'Grabbitz',                         s:3, t0:'19:45', t1:'20:45', g:'Electronic', l:1500000},
+      {n:'Hazlett',                          s:3, t0:'20:45', t1:'21:45', g:'Alternative',l:500000},
+      {n:'Subtronics',                       s:3, t0:'21:45', t1:'23:00', g:'Electronic', l:2500000},
+      {n:'Kaleo',                            s:3, t0:'23:00', t1:'24:00', g:'Indie',      l:8000000},
+      // Miller Lite Stage
+      {n:'DJay Mando',                       s:4, t0:'12:00', t1:'13:00', g:'Electronic', l:100000},
+      {n:'Walk Off The Earth',               s:4, t0:'14:00', t1:'15:00', g:'Pop',        l:3000000},
+      {n:'Gabriel Jacoby (Early)',           s:4, t0:'16:00', t1:'17:00', g:'Folk',       l:50000},
+      {n:'Porch Light (Early)',              s:4, t0:'18:00', t1:'19:00', g:'Country',   l:40000},
+      // Harley House Stage
+      {n:'Abby Moeller',                     s:5, t0:'16:30', t1:'17:30', g:'Country',   l:100000},
+      {n:'Boy Golden',                       s:5, t0:'17:45', t1:'18:45', g:'Folk',       l:200000},
+      {n:'The Mountain Goats',               s:5, t0:'19:00', t1:'20:15', g:'Indie',      l:2000000},
+      {n:'DJ Gemini Gilly',                  s:5, t0:'21:00', t1:'23:00', g:'Electronic', l:80000},
+      // Aurora Health Care Stage
+      {n:'School of Rock',                   s:6, t0:'12:00', t1:'13:30', g:'Rock',       l:0},
+      {n:'Wire & Nail',                      s:6, t0:'16:15', t1:'17:15', g:'Rock',       l:40000},
+      {n:'Old 97\'s',                        s:6, t0:'17:15', t1:'18:30', g:'Country',   l:700000},
+      {n:'Elijah Scott',                     s:6, t0:'18:45', t1:'19:45', g:'Country',   l:180000},
+      {n:'Lanie Gardner',                    s:6, t0:'20:15', t1:'21:30', g:'Country',   l:400000},
+      {n:'Halestorm',                        s:6, t0:'21:30', t1:'23:00', g:'Rock',       l:5000000},
+      // T-Mobile Stage
+      {n:'School of Rock',                   s:7, t0:'12:00', t1:'13:30', g:'Rock',       l:0},
+      {n:'10,000 Maniacs',                   s:7, t0:'16:15', t1:'17:30', g:'Alternative',l:800000},
+      {n:'Lisa Loeb',                        s:7, t0:'17:45', t1:'18:45', g:'Pop',        l:1500000},
+      {n:'Walk Off The Earth',               s:7, t0:'19:30', t1:'21:00', g:'Pop',        l:3000000},
+      {n:'Tucker Wetmore',                   s:7, t0:'22:15', t1:'23:45', g:'Country',   l:400000},
+      // Uline Warehouse
+      {n:'Jimmy Ray & The Hipsters',         s:8, t0:'12:00', t1:'13:00', g:'Blues',      l:50000},
+      {n:'Ghosts in the Gravel',             s:8, t0:'13:45', t1:'14:45', g:'Folk',       l:40000},
+      {n:'Ghosts in the Gravel',             s:8, t0:'15:30', t1:'16:30', g:'Folk',       l:40000},
+      {n:'The Terry Sims Band',              s:8, t0:'17:30', t1:'18:30', g:'Blues',      l:30000},
+      {n:'The Terry Sims Band',              s:8, t0:'19:30', t1:'20:30', g:'Blues',      l:30000},
+    ]
+  },
+  {
+    id:'jun26', label:'Fri Jun 26',
+    artists:[
+      // Amphitheater
+      {n:'Alex Sampson',                     s:0, t0:'17:30', t1:'18:30', g:'Country',   l:300000},
+      {n:'Jessie Murph',                     s:0, t0:'19:30', t1:'20:45', g:'Country',   l:5000000},
+      {n:'Cody Johnson',                     s:0, t0:'20:45', t1:'23:00', g:'Country',   l:8000000},
+      // BMO Harris
+      {n:'School of Rock',                   s:1, t0:'12:00', t1:'13:30', g:'Rock',       l:0},
+      {n:'KSP',                              s:1, t0:'18:15', t1:'19:15', g:'Electronic', l:50000},
+      {n:'The Aces',                         s:1, t0:'19:15', t1:'20:15', g:'Indie',      l:1500000},
+      {n:'Henrik',                           s:1, t0:'20:00', t1:'21:00', g:'Indie',      l:200000},
+      {n:'Louis Tomlinson',                  s:1, t0:'21:00', t1:'23:00', g:'Pop',        l:25000000},
+      {n:'Petey USA',                        s:1, t0:'23:00', t1:'24:00', g:'Indie',      l:1000000},
+      // GENERAC Stage
+      {n:'Guardrail',                        s:3, t0:'13:15', t1:'14:15', g:'Rock',       l:30000},
+      {n:'7th Heaven',                       s:3, t0:'16:15', t1:'17:15', g:'R&B',        l:100000},
+      {n:'Bobby Friss',                      s:3, t0:'17:45', t1:'18:45', g:'Indie',      l:80000},
+      {n:'Showoff',                          s:3, t0:'18:45', t1:'19:45', g:'Rock',       l:200000},
+      {n:'Big Wild',                         s:3, t0:'19:45', t1:'21:00', g:'Electronic', l:2000000},
+      {n:'Elderbrook',                       s:3, t0:'21:30', t1:'23:00', g:'Electronic', l:4000000},
+      // Miller Lite Stage
+      {n:'School of Rock',                   s:4, t0:'12:00', t1:'13:30', g:'Rock',       l:0},
+      {n:'Harrison Gordon',                  s:4, t0:'14:45', t1:'15:45', g:'Folk',       l:100000},
+      {n:'Lake Drive',                       s:4, t0:'16:30', t1:'17:30', g:'Rock',       l:50000},
+      {n:'Lucky Boys Confusion',             s:4, t0:'20:30', t1:'21:30', g:'Ska',        l:300000},
+      {n:'Goldfinger',                       s:4, t0:'22:30', t1:'24:00', g:'Ska',        l:400000},
+      // Harley House Stage
+      {n:'DJay Mando',                       s:5, t0:'12:00', t1:'13:00', g:'Electronic', l:100000},
+      {n:'Grouplove',                        s:5, t0:'14:00', t1:'15:30', g:'Indie',      l:3000000},
+      {n:'David Shaw of The Revivalists',    s:5, t0:'16:00', t1:'17:00', g:'Rock',       l:500000},
+      {n:'DJay Mando',                       s:5, t0:'18:00', t1:'19:00', g:'Electronic', l:100000},
+      // Aurora Health Care Stage
+      {n:'Allison Mahal',                    s:6, t0:'12:00', t1:'13:00', g:'Country',   l:100000},
+      {n:'School of Rock',                   s:6, t0:'12:00', t1:'13:30', g:'Rock',       l:0},
+      {n:'Siobhan Bodrug',                   s:6, t0:'16:30', t1:'17:30', g:'Folk',       l:200000},
+      {n:'Harper O\'Neill',                  s:6, t0:'17:45', t1:'18:45', g:'Country',   l:200000},
+      {n:'Sudan Archives',                   s:6, t0:'19:00', t1:'20:15', g:'R&B',        l:1000000},
+      {n:'Band Loula',                       s:6, t0:'20:15', t1:'21:15', g:'Electronic', l:60000},
+      // T-Mobile Stage
+      {n:'School of Rock',                   s:7, t0:'12:00', t1:'13:30', g:'Rock',       l:0},
+      {n:'Blonde',                           s:7, t0:'16:30', t1:'17:30', g:'Pop',        l:1000000},
+      {n:'Sugo',                             s:7, t0:'16:15', t1:'17:15', g:'Indie',      l:50000},
+      {n:'Two Feet',                         s:7, t0:'17:45', t1:'19:00', g:'Alternative',l:8000000},
+      {n:'Grouplove',                        s:7, t0:'19:30', t1:'20:30', g:'Indie',      l:3000000},
+      {n:'The Revivalists',                  s:7, t0:'21:30', t1:'23:00', g:'Rock',       l:2000000},
+      // Uline Warehouse
+      {n:'Danny Miller Band',                s:8, t0:'13:45', t1:'14:45', g:'Country',   l:100000},
+      {n:'Danny Miller Band',                s:8, t0:'15:30', t1:'16:30', g:'Country',   l:100000},
+      {n:'Testing Floor',                    s:8, t0:'17:30', t1:'18:30', g:'Indie',      l:50000},
+      {n:'Testing Floor',                    s:8, t0:'19:30', t1:'20:30', g:'Indie',      l:50000},
+      {n:'Greg Koch & The Koch Marshall Trio',s:8,t0:'18:15', t1:'19:15', g:'Blues',      l:50000},
+      {n:'Marcus King Band',                 s:8, t0:'22:15', t1:'24:00', g:'Blues',      l:2000000},
+    ]
+  },
+  {
+    id:'jun27', label:'Sat Jun 27',
+    artists:[
+      // Amphitheater
+      {n:'Carter Faith',                     s:0, t0:'19:30', t1:'20:30', g:'Country',   l:500000},
+      {n:'Dylan Schneider',                  s:0, t0:'20:30', t1:'21:45', g:'Country',   l:500000},
+      {n:'Post Malone',                      s:0, t0:'21:45', t1:'24:00', g:'Hip-Hop',   l:60000000},
+      // BMO Harris
+      {n:'Alley Eyes',                       s:1, t0:'12:00', t1:'13:00', g:'Alternative',l:100000},
+      {n:'Fuzzysurf',                        s:1, t0:'13:15', t1:'14:15', g:'Rock',       l:50000},
+      {n:'Cardinal Bloom',                   s:1, t0:'14:30', t1:'15:30', g:'Indie',      l:200000},
+      {n:'Modern Alibi',                     s:1, t0:'16:00', t1:'17:00', g:'Country',   l:200000},
+      {n:'Alannah McReady',                  s:1, t0:'18:30', t1:'19:30', g:'Country',   l:500000},
+      {n:'Taz',                              s:1, t0:'18:00', t1:'19:00', g:'Electronic', l:80000},
+      {n:'Russell Dickerson',                s:1, t0:'22:00', t1:'23:30', g:'Country',   l:2000000},
+      {n:'BORNS',                            s:1, t0:'22:00', t1:'23:30', g:'Indie',      l:3000000},
+      // GENERAC Stage
+      {n:'King Solomon',                     s:3, t0:'14:45', t1:'15:45', g:'Soul',       l:80000},
+      {n:'Chris Koster',                     s:3, t0:'16:00', t1:'17:00', g:'Country',   l:100000},
+      {n:'Jean Dawson',                      s:3, t0:'17:30', t1:'18:30', g:'Indie',      l:1000000},
+      {n:'PawPaw Rod',                       s:3, t0:'19:30', t1:'20:30', g:'Electronic', l:100000},
+      {n:'Wolfmother',                       s:3, t0:'21:30', t1:'23:00', g:'Rock',       l:5000000},
+      // Miller Lite Stage
+      {n:'In The Know',                      s:4, t0:'13:15', t1:'14:15', g:'Indie',      l:50000},
+      {n:'PawPaw Rod',                       s:4, t0:'14:00', t1:'15:00', g:'Electronic', l:100000},
+      {n:'Left on Sunset',                   s:4, t0:'16:30', t1:'17:30', g:'Pop',        l:100000},
+      {n:'The Expendables',                  s:4, t0:'18:30', t1:'19:30', g:'Reggae',     l:500000},
+      {n:'King Buffalo',                     s:4, t0:'19:30', t1:'20:30', g:'Rock',       l:500000},
+      {n:'The Movement',                     s:4, t0:'20:30', t1:'21:30', g:'Reggae',     l:500000},
+      {n:'Pepper',                           s:4, t0:'22:30', t1:'24:00', g:'Reggae',     l:500000},
+      // Harley House Stage
+      {n:'DJay Mando',                       s:5, t0:'12:00', t1:'13:00', g:'Electronic', l:100000},
+      {n:'Dylan Schneider (Early)',           s:5, t0:'16:00', t1:'17:00', g:'Country',   l:500000},
+      {n:'Orquesta Ayala',                   s:5, t0:'16:30', t1:'17:30', g:'Latin',      l:100000},
+      {n:'DJay Mando',                       s:5, t0:'18:00', t1:'19:00', g:'Electronic', l:100000},
+      {n:'Junior Rivera',                    s:5, t0:'17:45', t1:'18:45', g:'Latin',      l:100000},
+      {n:'Mariachi Sol de Mexico',           s:5, t0:'19:00', t1:'20:00', g:'Latin',      l:200000},
+      {n:'DJ Don B',                         s:5, t0:'21:00', t1:'23:00', g:'Electronic', l:50000},
+      // Aurora Health Care Stage
+      {n:'Tempo Dance Co.',                  s:6, t0:'12:00', t1:'13:00', g:'Other',      l:0},
+      {n:'DJ Andres',                        s:6, t0:'14:45', t1:'15:45', g:'Latin',      l:50000},
+      {n:'Jazzieca',                         s:6, t0:'15:15', t1:'16:15', g:'R&B',        l:80000},
+      {n:'Soulidified',                      s:6, t0:'18:15', t1:'19:15', g:'Soul',       l:100000},
+      {n:'Audrey Nuna',                      s:6, t0:'22:15', t1:'24:00', g:'R&B',        l:500000},
+      {n:'Little Feat',                      s:6, t0:'21:30', t1:'23:00', g:'Rock',       l:1000000},
+      // T-Mobile Stage
+      {n:'The Taxmen',                       s:7, t0:'12:45', t1:'13:45', g:'Rock',       l:50000},
+      {n:'Haley Johnsen',                    s:7, t0:'14:30', t1:'15:30', g:'Folk',       l:200000},
+      {n:'Vincent Van Great',               s:7, t0:'14:30', t1:'15:30', g:'Indie',      l:100000},
+      {n:'Tracy Bonham',                     s:7, t0:'15:30', t1:'16:30', g:'Alternative',l:300000},
+      {n:'LAMB',                             s:7, t0:'16:15', t1:'17:15', g:'Rock',       l:200000},
+      {n:'Hank Azaria & The EZ Street Band', s:7, t0:'17:30', t1:'18:30', g:'Blues',      l:50000},
+      {n:'Freddy Jones Band',                s:7, t0:'19:30', t1:'20:30', g:'Rock',       l:200000},
+      // Uline Warehouse
+      {n:'Aubrey Marie',                     s:8, t0:'12:00', t1:'13:00', g:'Country',   l:80000},
+      {n:'Organissimo',                      s:8, t0:'13:45', t1:'14:45', g:'Jazz',       l:50000},
+      {n:'Organissimo',                      s:8, t0:'15:30', t1:'16:30', g:'Jazz',       l:50000},
+      {n:'The Hungry Williams',              s:8, t0:'17:30', t1:'18:30', g:'Blues',      l:50000},
+      {n:'The Hungry Williams',              s:8, t0:'19:30', t1:'20:30', g:'Blues',      l:50000},
+    ]
+  },
+  {
+    id:'jul02', label:'Thu Jul 2',
+    artists:[
+      // Amphitheater
+      {n:'Tumper City',                      s:0, t0:'18:30', t1:'19:30', g:'Rock',       l:50000},
+      {n:'Julia Wolf',                       s:0, t0:'19:20', t1:'20:20', g:'Pop',        l:500000},
+      {n:'Muse',                             s:0, t0:'21:00', t1:'23:30', g:'Rock',       l:15000000},
+      // BMO Harris
+      {n:'The President Kings',              s:1, t0:'13:30', t1:'14:30', g:'Country',   l:100000},
+      {n:'Hell On Heels',                    s:1, t0:'14:30', t1:'15:30', g:'Country',   l:300000},
+      {n:'Hotel Fiction',                    s:1, t0:'17:00', t1:'18:00', g:'Indie',      l:500000},
+      {n:'Sunflower Bean',                   s:1, t0:'18:00', t1:'19:00', g:'Indie',      l:1000000},
+      {n:'Bren Joy',                         s:1, t0:'19:25', t1:'20:25', g:'R&B',        l:1000000},
+      {n:'Blondshell',                       s:1, t0:'20:00', t1:'21:00', g:'Indie',      l:1000000},
+      {n:'Ella Mai',                         s:1, t0:'21:00', t1:'22:30', g:'R&B',        l:8000000},
+      {n:'The Beths',                        s:1, t0:'22:00', t1:'23:30', g:'Indie',      l:1000000},
+      // GENERAC Stage
+      {n:'Buffchick',                        s:3, t0:'13:30', t1:'14:30', g:'Rock',       l:50000},
+      {n:'Munroe',                           s:3, t0:'14:30', t1:'15:30', g:'Indie',      l:200000},
+      {n:'Superfly',                         s:3, t0:'14:45', t1:'15:45', g:'Soul',       l:300000},
+      {n:'Scorched Waves',                   s:3, t0:'15:30', t1:'16:30', g:'Rock',       l:50000},
+      {n:'Breaking Cadence',                 s:3, t0:'18:30', t1:'19:30', g:'Rock',       l:100000},
+      {n:'Living Colour',                    s:3, t0:'18:30', t1:'19:30', g:'Rock',       l:1000000},
+      {n:'Anees',                            s:3, t0:'20:30', t1:'21:30', g:'Indie',      l:500000},
+      {n:'Candlebox',                        s:3, t0:'21:30', t1:'22:30', g:'Rock',       l:500000},
+      {n:'Sean Paul',                        s:3, t0:'23:30', t1:'24:00', g:'Reggae',     l:15000000},
+      // Miller Lite Stage
+      {n:'T-Bird & The MPs',                 s:4, t0:'13:15', t1:'14:15', g:'Blues',      l:50000},
+      {n:'Spin Doctors',                     s:4, t0:'16:00', t1:'17:00', g:'Rock',       l:1000000},
+      {n:'El Sebas',                         s:4, t0:'18:30', t1:'19:30', g:'Latin',      l:100000},
+      {n:'Ax & The Hatchetmen',              s:4, t0:'19:30', t1:'20:30', g:'Rock',       l:50000},
+      {n:'Chase McDaniel',                   s:4, t0:'20:30', t1:'21:30', g:'Country',   l:1000000},
+      {n:'Spoon',                            s:4, t0:'21:30', t1:'23:00', g:'Indie',      l:3000000},
+      {n:'Whiskey Myers',                    s:4, t0:'23:30', t1:'24:00', g:'Country',   l:3000000},
+      // Harley House Stage
+      {n:'DJay Mando',                       s:5, t0:'12:00', t1:'13:00', g:'Electronic', l:100000},
+      {n:'Fiorentine Opera Company',         s:5, t0:'12:45', t1:'13:45', g:'Other',      l:0},
+      {n:'Jobi Riccio',                      s:5, t0:'17:15', t1:'18:15', g:'Folk',       l:50000},
+      {n:'DJay Mando',                       s:5, t0:'18:00', t1:'19:00', g:'Electronic', l:100000},
+      {n:'Matthew Hanson',                   s:5, t0:'19:00', t1:'20:00', g:'Country',   l:50000},
+      // Aurora Health Care Stage
+      {n:'Pretty Pity',                      s:6, t0:'12:45', t1:'13:45', g:'Indie',      l:100000},
+      {n:'Cold Steps',                       s:6, t0:'14:30', t1:'15:30', g:'Indie',      l:50000},
+      {n:'Kyle Ray',                         s:6, t0:'15:15', t1:'16:15', g:'Country',   l:200000},
+      {n:'Flourescents',                     s:6, t0:'16:15', t1:'17:15', g:'Indie',      l:200000},
+      {n:'Case Oats',                        s:6, t0:'16:30', t1:'17:30', g:'Country',   l:100000},
+      {n:'Sister Hazel',                     s:6, t0:'18:00', t1:'19:00', g:'Rock',       l:1500000},
+      {n:'Girlfriends',                      s:6, t0:'18:15', t1:'19:15', g:'Pop',        l:500000},
+      {n:'GIRLNEXTDOOR',                     s:6, t0:'20:00', t1:'21:00', g:'Pop',        l:500000},
+      {n:'Kenny Noodle',                     s:6, t0:'20:15', t1:'21:15', g:'Indie',      l:80000},
+      {n:'All Time Low',                     s:6, t0:'22:15', t1:'24:00', g:'Rock',       l:5000000},
+      // T-Mobile Stage
+      {n:'Palm Ghosts',                      s:7, t0:'12:00', t1:'13:00', g:'Alternative',l:100000},
+      {n:'Outronaut',                        s:7, t0:'14:30', t1:'15:30', g:'Rock',       l:50000},
+      {n:'The Ocean Blue',                   s:7, t0:'15:30', t1:'16:30', g:'Alternative',l:500000},
+      {n:'Spin Doctors',                     s:7, t0:'19:30', t1:'20:30', g:'Rock',       l:1000000},
+      {n:'Gin Blossoms',                     s:7, t0:'21:30', t1:'23:00', g:'Rock',       l:2000000},
+      // Uline Warehouse
+      {n:'Paul Spencer Band',                s:8, t0:'13:45', t1:'14:45', g:'Blues',      l:30000},
+      {n:'Paul Spencer Band',                s:8, t0:'15:30', t1:'16:30', g:'Blues',      l:30000},
+      {n:'The Group',                        s:8, t0:'17:30', t1:'18:30', g:'Soul',       l:50000},
+      {n:'The Group',                        s:8, t0:'19:30', t1:'20:30', g:'Soul',       l:50000},
+    ]
+  },
+  {
+    id:'jul03', label:'Fri Jul 3',
+    artists:[
+      // Amphitheater
+      {n:'Noah Cyrus',                       s:0, t0:'19:30', t1:'20:30', g:'Country',   l:8000000},
+      {n:'Alex Warren',                      s:0, t0:'20:45', t1:'23:00', g:'Pop',        l:20000000},
+      // BMO Harris
+      {n:'Sarah Fierek',                     s:1, t0:'13:00', t1:'14:00', g:'Country',   l:100000},
+      {n:'V-Funk',                           s:1, t0:'14:30', t1:'15:30', g:'Electronic', l:50000},
+      {n:'Stone Jam Band',                   s:1, t0:'16:00', t1:'17:00', g:'Rock',       l:50000},
+      {n:'DJ Splackavelli',                  s:1, t0:'17:30', t1:'18:30', g:'Hip-Hop',   l:50000},
+      {n:'DJ Kool',                          s:1, t0:'18:00', t1:'19:00', g:'Hip-Hop',   l:200000},
+      {n:'Stephen Marley',                   s:1, t0:'19:15', t1:'20:15', g:'Reggae',     l:2000000},
+      {n:'DJ Jazzy Jeff',                    s:1, t0:'20:00', t1:'21:00', g:'Hip-Hop',   l:500000},
+      {n:'Buju Banton',                      s:1, t0:'21:00', t1:'22:30', g:'Reggae',     l:3000000},
+      {n:'Rev Run',                          s:1, t0:'22:00', t1:'23:30', g:'Hip-Hop',   l:500000},
+      // GENERAC Stage
+      {n:'Social Cig',                       s:3, t0:'12:00', t1:'13:00', g:'Indie',      l:50000},
+      {n:'Easy Honey',                       s:3, t0:'14:00', t1:'15:00', g:'Folk',       l:50000},
+      {n:'YaYa Biggs',                       s:3, t0:'15:30', t1:'16:30', g:'Hip-Hop',   l:100000},
+      {n:'Edgehill',                         s:3, t0:'17:30', t1:'18:30', g:'Country',   l:200000},
+      {n:'Adam Warner',                      s:3, t0:'18:30', t1:'19:30', g:'Country',   l:200000},
+      {n:'Ax & The Hatchetmen',              s:3, t0:'19:30', t1:'20:30', g:'Rock',       l:50000},
+      {n:'Chase McDaniel',                   s:3, t0:'20:30', t1:'21:30', g:'Country',   l:1000000},
+      {n:'Spoon',                            s:3, t0:'21:30', t1:'23:00', g:'Indie',      l:3000000},
+      {n:'Whiskey Myers',                    s:3, t0:'23:30', t1:'24:00', g:'Country',   l:3000000},
+      // Miller Lite Stage
+      {n:'Fellow Travelers',                 s:4, t0:'12:30', t1:'13:30', g:'Rock',       l:100000},
+      {n:'Lost Orange Cat',                  s:4, t0:'14:00', t1:'15:00', g:'Indie',      l:50000},
+      {n:'The Big Win',                      s:4, t0:'16:00', t1:'17:00', g:'Indie',      l:100000},
+      {n:'Scout Speer',                      s:4, t0:'17:15', t1:'18:15', g:'Country',   l:200000},
+      // Harley House Stage
+      {n:'DJay Mando',                       s:5, t0:'12:00', t1:'13:00', g:'Electronic', l:100000},
+      {n:'St. Paul & The Broken Bones',      s:5, t0:'14:00', t1:'15:30', g:'Soul',       l:1000000},
+      {n:'Spoon (Afternoon)',                s:5, t0:'16:00', t1:'17:00', g:'Indie',      l:3000000},
+      {n:'DJay Mando',                       s:5, t0:'18:00', t1:'19:00', g:'Electronic', l:100000},
+      {n:'St. Paul & The Broken Bones',      s:5, t0:'19:30', t1:'20:30', g:'Soul',       l:1000000},
+      {n:'BG Good',                          s:5, t0:'21:00', t1:'22:00', g:'Hip-Hop',   l:100000},
+      {n:'Flo Rida',                         s:5, t0:'22:15', t1:'24:00', g:'Hip-Hop',   l:12000000},
+      // Aurora Health Care Stage
+      {n:'wht.rrbt.obj',                     s:6, t0:'12:45', t1:'13:45', g:'Electronic', l:100000},
+      {n:'Lunde',                            s:6, t0:'14:00', t1:'15:00', g:'Indie',      l:50000},
+      {n:'Manny Torres',                     s:6, t0:'14:30', t1:'15:30', g:'Latin',      l:100000},
+      {n:'Ask Carol',                        s:6, t0:'15:15', t1:'16:15', g:'Country',   l:100000},
+      {n:'Wave X Nile',                      s:6, t0:'16:15', t1:'17:15', g:'Electronic', l:100000},
+      {n:'The Heavy Heavy',                  s:6, t0:'17:45', t1:'18:45', g:'Soul',       l:500000},
+      {n:'Low Down Brass Band',              s:6, t0:'18:15', t1:'19:15', g:'Jazz',       l:200000},
+      {n:'Neal Francis',                     s:6, t0:'19:00', t1:'20:00', g:'Soul',       l:600000},
+      // T-Mobile Stage
+      {n:'Hanna Simone',                     s:7, t0:'13:15', t1:'14:15', g:'Pop',        l:100000},
+      {n:'Julianna Bergendahl Joy Project',  s:7, t0:'14:00', t1:'15:00', g:'Jazz',       l:100000},
+      {n:'Radio Radio',                      s:7, t0:'16:30', t1:'17:30', g:'Indie',      l:100000},
+      {n:'Ken Pomeroy',                      s:7, t0:'17:30', t1:'18:30', g:'Blues',      l:50000},
+      {n:'Pierre Lee',                       s:7, t0:'17:30', t1:'18:30', g:'Electronic', l:50000},
+      {n:'St. Paul & The Broken Bones',      s:7, t0:'19:30', t1:'20:30', g:'Soul',       l:1000000},
+      {n:'Gene Simmons Band',                s:7, t0:'21:30', t1:'23:00', g:'Rock',       l:500000},
+      // Uline Warehouse
+      {n:'Bob Mittnacht & The Crowning Glories', s:8, t0:'12:30', t1:'13:30', g:'Blues',  l:30000},
+      {n:'Kai Bergendahl Project',           s:8, t0:'13:45', t1:'14:45', g:'Jazz',       l:100000},
+      {n:'Simone Lunde',                     s:8, t0:'12:45', t1:'13:45', g:'Folk',       l:100000},
+      {n:'Suzanne Gizanna',                  s:8, t0:'12:00', t1:'13:00', g:'Jazz',       l:50000},
+    ]
+  },
+  {
+    id:'jul04', label:'Sat Jul 4',
+    artists:[
+      // Amphitheater
+      {n:'Jelly Roll with Tyler Hubbard & Three 6 Mafia', s:0, t0:'17:00', t1:'19:00', g:'Country', l:25000000},
+      {n:'Preston Cooper',                   s:0, t0:'19:15', t1:'20:15', g:'Country',   l:200000},
+      {n:'John Vincent III',                 s:0, t0:'20:00', t1:'21:30', g:'Country',   l:500000},
+      // BMO Harris
+      {n:'BERMS',                            s:1, t0:'13:00', t1:'14:00', g:'Indie',      l:100000},
+      {n:'Louie & The Flashbombs',           s:1, t0:'14:30', t1:'15:30', g:'Rock',       l:100000},
+      {n:'Elephonic',                        s:1, t0:'16:00', t1:'17:00', g:'Electronic', l:200000},
+      {n:'Palmer Anthony',                   s:1, t0:'17:30', t1:'18:30', g:'Country',   l:200000},
+      {n:'KT Tunstall',                      s:1, t0:'18:00', t1:'19:00', g:'Folk',       l:2000000},
+      {n:'Sam Barber',                       s:1, t0:'22:00', t1:'23:30', g:'Country',   l:5000000},
+      {n:'Jonah Kagen',                      s:1, t0:'22:00', t1:'23:30', g:'Country',   l:1000000},
+      // GENERAC Stage
+      {n:'"Horizon" (Oh Geeez Not Again)',   s:3, t0:'12:15', t1:'13:15', g:'Alternative',l:50000},
+      {n:'UrMom',                            s:3, t0:'14:00', t1:'15:00', g:'Alternative',l:200000},
+      {n:'Nicole Lawrence',                  s:3, t0:'15:30', t1:'16:30', g:'Country',   l:200000},
+      {n:'Soul Asylum',                      s:3, t0:'17:30', t1:'18:30', g:'Alternative',l:1500000},
+      {n:'Drown The Lifeguard',              s:3, t0:'18:45', t1:'19:45', g:'Rock',       l:100000},
+      {n:'The Jayhawks',                     s:3, t0:'19:30', t1:'20:30', g:'Country',   l:500000},
+      {n:'Sunami',                           s:3, t0:'20:30', t1:'21:30', g:'Metal',      l:300000},
+      {n:'BoDeans',                          s:3, t0:'22:00', t1:'23:30', g:'Rock',       l:300000},
+      {n:'Kerry King',                       s:3, t0:'22:30', t1:'24:00', g:'Metal',      l:1000000},
+      // Miller Lite Stage
+      {n:'Flatwounds',                       s:4, t0:'13:45', t1:'14:45', g:'Indie',      l:50000},
+      {n:'The Maiden Voyage',               s:4, t0:'15:15', t1:'16:15', g:'Jazz',       l:50000},
+      {n:'The Temper Trap',                  s:4, t0:'16:00', t1:'17:00', g:'Indie',      l:2000000},
+      {n:'SIIN',                             s:4, t0:'17:00', t1:'18:00', g:'Rock',       l:100000},
+      {n:'DJay Mando',                       s:4, t0:'18:00', t1:'19:00', g:'Electronic', l:100000},
+      {n:'Baha Men',                         s:4, t0:'19:00', t1:'20:00', g:'Reggae',     l:3000000},
+      {n:'Sad Boy Saturday',                 s:4, t0:'21:00', t1:'22:00', g:'Alternative',l:100000},
+      {n:'The Temper Trap',                  s:4, t0:'22:15', t1:'24:00', g:'Indie',      l:2000000},
+      // Harley House Stage
+      {n:'DJay Mando',                       s:5, t0:'12:00', t1:'13:00', g:'Electronic', l:100000},
+      {n:'Rockonsin: Runner Up',             s:5, t0:'12:45', t1:'13:45', g:'Rock',       l:0},
+      {n:'Rockonsin: Winner',                s:5, t0:'14:00', t1:'15:00', g:'Rock',       l:0},
+      {n:'VALE',                             s:5, t0:'14:15', t1:'15:15', g:'Indie',      l:100000},
+      {n:'GegoY Nony',                       s:5, t0:'16:30', t1:'17:30', g:'Latin',      l:100000},
+      {n:'Tag Team',                         s:5, t0:'17:45', t1:'18:45', g:'Hip-Hop',   l:500000},
+      // Aurora Health Care Stage
+      {n:'The Last Bees',                    s:6, t0:'12:45', t1:'13:45', g:'Indie',      l:100000},
+      {n:'Known Moons',                      s:6, t0:'14:30', t1:'15:30', g:'Indie',      l:50000},
+      {n:'Carolina Liar',                    s:6, t0:'16:15', t1:'17:15', g:'Rock',       l:500000},
+      {n:'Pure Hex',                         s:6, t0:'18:15', t1:'19:15', g:'Rock',       l:50000},
+      {n:'Joywave',                          s:6, t0:'20:15', t1:'21:15', g:'Indie',      l:1000000},
+      {n:'The Temper Trap',                  s:6, t0:'22:15', t1:'24:00', g:'Indie',      l:2000000},
+      // T-Mobile Stage
+      {n:'Victor Jones',                     s:7, t0:'12:30', t1:'13:30', g:'Soul',       l:100000},
+      {n:'Porcupine',                        s:7, t0:'14:00', t1:'15:00', g:'Folk',       l:50000},
+      {n:'Joe Wray',                         s:7, t0:'13:45', t1:'14:45', g:'Country',   l:100000},
+      {n:'Pol Dog Pondering',                s:7, t0:'15:30', t1:'16:30', g:'Folk',       l:100000},
+      {n:'Jerry Harrison\'s 150 Years of Talking Heads', s:7, t0:'17:30', t1:'18:30', g:'New Wave', l:200000},
+      {n:'Mindi Abair',                      s:7, t0:'19:30', t1:'20:30', g:'Jazz',       l:200000},
+      {n:'Straight No Chaser',               s:7, t0:'22:15', t1:'24:00', g:'Other',      l:2000000},
+      // Uline Warehouse
+      {n:'Frogwater',                        s:8, t0:'12:00', t1:'13:00', g:'Folk',       l:50000},
+      {n:'Joe Wray',                         s:8, t0:'15:30', t1:'16:30', g:'Country',   l:100000},
+      {n:'Dorsten',                          s:8, t0:'17:30', t1:'18:30', g:'Rock',       l:100000},
+      {n:'Dorsten',                          s:8, t0:'19:30', t1:'20:30', g:'Rock',       l:100000},
+    ]
+  },
+];
+
+// ──────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────
+function parseTime(s) {
+  const [h, m] = s.split(':').map(Number);
+  return h + m / 60;
+}
+
+function fmtListeners(n) {
+  if (!n) return null;
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M monthly listeners';
+  if (n >= 1e3) return Math.round(n / 1e3) + 'K monthly listeners';
+  return n + ' monthly listeners';
+}
+
+function fmtTime12(s) {
+  let [h, m] = s.split(':').map(Number);
+  if (h >= 24) h -= 24;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 || 12;
+  return `${hh}:${m.toString().padStart(2,'0')} ${ampm}`;
+}
+
+function spotifyUrl(name) {
+  return `https://open.spotify.com/search/${encodeURIComponent(name)}`;
+}
+
+function genreColor(g) {
+  return (GENRES[g] || GENRES['Other']).color;
+}
+
+// ──────────────────────────────────────────────
+// State
+// ──────────────────────────────────────────────
+let activeDay = DAYS[0].id;
+let activeGenres = new Set(Object.keys(GENRES));
+
+// ──────────────────────────────────────────────
+// Render functions
+// ──────────────────────────────────────────────
+function renderTabs() {
+  const el = document.getElementById('dayTabs');
+  el.innerHTML = DAYS.map(d => `
+    <div class="day-tab${d.id===activeDay?' active':''}" data-id="${d.id}">${d.label}</div>
+  `).join('');
+  el.querySelectorAll('.day-tab').forEach(t =>
+    t.addEventListener('click', () => { activeDay = t.dataset.id; renderAll(); })
+  );
+}
+
+function renderLegend() {
+  const el = document.getElementById('legend');
+  // Only show genres present in current day
+  const day = DAYS.find(d => d.id === activeDay);
+  const used = new Set(day.artists.map(a => a.g));
+  el.innerHTML = [...Object.keys(GENRES)]
+    .filter(g => used.has(g))
+    .map(g => `
+      <div class="legend-item${activeGenres.has(g)?'':' dimmed'}" data-genre="${g}" title="Click to toggle">
+        <div class="legend-dot" style="background:${GENRES[g].color}"></div>
+        ${g}
+      </div>
+    `).join('');
+  el.querySelectorAll('.legend-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const g = item.dataset.genre;
+      if (activeGenres.has(g)) activeGenres.delete(g);
+      else activeGenres.add(g);
+      renderAll();
+    });
+  });
+}
+
+function renderSchedule() {
+  const day = DAYS.find(d => d.id === activeDay);
+  const totalHours = END_H - START_H;
+  const gridH = totalHours * HOUR_H;
+
+  // Time axis
+  const axis = document.getElementById('timeAxis');
+  axis.innerHTML = Array.from({length: totalHours}, (_, i) => {
+    const h = START_H + i;
+    const label = h === 12 ? '12 PM' : h < 12 ? `${h} AM` : h === 24 ? '12 AM' : `${h > 12 ? h - 12 : h} ${h >= 12 && h < 24 ? 'PM' : 'AM'}`;
+    return `<div class="time-label">${label}</div>`;
+  }).join('');
+
+  // Stages
+  const grid = document.getElementById('stagesGrid');
+  grid.innerHTML = '';
+
+  STAGES.forEach((stageName, si) => {
+    const artists = day.artists.filter(a => a.s === si);
+    if (!artists.length && !day.artists.some(a => a.s === si)) return;
+
+    const col = document.createElement('div');
+    col.className = 'stage-col';
+
+    const header = document.createElement('div');
+    header.className = 'stage-header';
+    header.textContent = stageName;
+    col.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'stage-body';
+    body.style.height = gridH + 'px';
+    body.style.position = 'relative';
+
+    // Hour grid lines
+    for (let i = 0; i < totalHours; i++) {
+      const row = document.createElement('div');
+      row.className = 'hour-row';
+      body.appendChild(row);
+    }
+
+    // Artist blocks
+    artists.forEach(a => {
+      const t0 = parseTime(a.t0);
+      const t1 = parseTime(a.t1 === '24:00' ? '24:00' : a.t1);
+      const dur = Math.max(t1, t0 + 0.5) - t0;
+      const top = (t0 - START_H) * HOUR_H;
+      const height = Math.max(dur * HOUR_H - 2, 28);
+      const color = genreColor(a.g);
+      const dimmed = !activeGenres.has(a.g);
+
+      const block = document.createElement('a');
+      block.className = 'artist-block' + (dimmed ? ' dimmed' : '');
+      block.href = spotifyUrl(a.n);
+      block.target = '_blank';
+      block.rel = 'noopener noreferrer';
+      block.style.cssText = `top:${top}px;height:${height}px;background:${color};`;
+
+      const listeners = fmtListeners(a.l);
+      block.innerHTML = `
+        <span class="ab-name">${a.n}</span>
+        <span class="ab-genre">${a.g}</span>
+        ${listeners ? `<span class="ab-listeners">${listeners}</span>` : ''}
+        <span class="ab-time">${fmtTime12(a.t0)}</span>
+      `;
+
+      // Tooltip
+      block.addEventListener('mouseenter', (e) => showTooltip(e, a));
+      block.addEventListener('mouseleave', hideTooltip);
+      block.addEventListener('mousemove', moveTooltip);
+
+      body.appendChild(block);
+    });
+
+    col.appendChild(body);
+    grid.appendChild(col);
+  });
+}
+
+function renderAll() {
+  renderTabs();
+  renderLegend();
+  renderSchedule();
+}
+
+// ──────────────────────────────────────────────
+// Tooltip
+// ──────────────────────────────────────────────
+const tt = document.getElementById('tooltip');
+
+function showTooltip(e, a) {
+  const listeners = fmtListeners(a.l);
+  const color = genreColor(a.g);
+  tt.innerHTML = `
+    <strong>${a.n}</strong>
+    <div class="tt-genre" style="color:${color}">${a.g}</div>
+    ${listeners ? `<div class="tt-listeners">🎧 ${listeners}</div>` : ''}
+    <div class="tt-listeners">⏰ ${fmtTime12(a.t0)} – ${fmtTime12(a.t1)}</div>
+    <div class="tt-listeners">📍 ${STAGES[a.s]}</div>
+    <div class="tt-hint">Click to open Spotify ↗</div>
+  `;
+  tt.style.display = 'block';
+  moveTooltip(e);
+}
+
+function hideTooltip() { tt.style.display = 'none'; }
+
+function moveTooltip(e) {
+  const W = window.innerWidth, H = window.innerHeight;
+  const tw = tt.offsetWidth, th = tt.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + tw > W - 10) x = e.clientX - tw - 10;
+  if (y + th > H - 10) y = e.clientY - th - 10;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+}
+
+// ──────────────────────────────────────────────
+// Boot
+// ──────────────────────────────────────────────
+renderAll();
+</script>
+</body>
+</html>
